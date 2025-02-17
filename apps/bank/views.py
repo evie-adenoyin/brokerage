@@ -13,7 +13,6 @@ class BankAccountCreateAPIView(generics.CreateAPIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def perform_create(self, serializer):
-
         serializer.save(user=self.request.user)
 
 
@@ -43,29 +42,24 @@ class BankDepositAPIView(generics.CreateAPIView):
 
     def create(self, *args, **kwargs):
         # Ensure the bank account belongs to the logged-in user
+        data = self.request.data
+        user_account_number = data["bank_account"]
+        amount = data["amount"]
         user = self.request.user
-        bank_account = Account.objects.filter(
-            user=user, bank_account=self.request.data["bank_account"]
+        user_bank_account = Account.objects.filter(
+            user=user, account_number=user_account_number
         ).first()
 
-        if not bank_account:
+        if not user_bank_account:
             return Response(
                 {"error": "Bank account not found or does not belong to the user"},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
         # Create a deposit transaction
-        serializer = self.get_serializer(data=self.request.data)
-        serializer.is_valid(raise_exception=True)
-        deposit_to_account = deposit_funds(
-            self.request.user,
-            bank_account.pk,
-        )
-        serializer.save(
-            bank_account=bank_account, transaction_type="DEPOSIT", status="COMPLETED"
-        )
 
-        return deposit_to_account
+        deposit_to_account = deposit_funds(self.request.user, user_bank_account, amount)
+        return Response({"message": deposit_to_account}, status=status.HTTP_201_CREATED)
 
 
 class BankWithdrawalAPIView(generics.CreateAPIView):
@@ -74,29 +68,25 @@ class BankWithdrawalAPIView(generics.CreateAPIView):
 
     def create(self, *args, **kwargs):
         # Ensure the bank account belongs to the logged-in user
+        data = self.request.data
+        user_account_number = data["bank_account"]
+        amount = data["amount"]
         user = self.request.user
-        bank_account = Account.objects.filter(
-            user=user, bank_account=self.request.data["bank_account"]
+        user_bank_account = Account.objects.filter(
+            user=user, account_number=user_account_number
         ).first()
 
-        if not bank_account:
+        if not user_bank_account:
             return Response(
                 {"error": "Bank account not found or does not belong to the user"},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        # Check if the account has sufficient balance (optional, if you track balance)
-        # For now, we assume the bank handles balance checks
+        # Create a deposit transaction
 
-        # Create a withdrawal transaction
-        serializer = self.get_serializer(data=self.request.data)
-        serializer.is_valid(raise_exception=True)
         withdraw_from_account = withdraw_funds(
-            request.user,
-            bank_account.pk,
+            self.request.user, user_bank_account, amount
         )
-        serializer.save(
-            bank_account=bank_account, transaction_type="WITHDRAWAL", status="COMPLETED"
+        return Response(
+            {"message": withdraw_from_account}, status=status.HTTP_201_CREATED
         )
-
-        return withdraw_from_account

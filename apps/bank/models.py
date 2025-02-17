@@ -41,15 +41,15 @@ class Transaction(models.Model):
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
-        related_name="transactions",
+        related_name="user_transactions",
         db_index=True,
     )
     bank_account = models.ForeignKey(
-        Account, on_delete=models.CASCADE, related_name="transactions"
+        Account, on_delete=models.CASCADE, related_name="bank_transactions"
     )
     transaction_type = models.CharField(max_length=10, choices=TRANSACTION_TYPES)
     transaction_id = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
-    amount = models.DecimalField(max_digits=10, decimal_places=2)
+    amount = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
 
     currency = models.CharField(max_length=3, default="USD")
     status = models.CharField(

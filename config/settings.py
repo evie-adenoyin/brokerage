@@ -46,7 +46,6 @@ INSTALLED_APPS = [
     # custom apps
     "apps.user.apps.UserConfig",
     "apps.bank.apps.BankConfig",
-    "apps.exchange.apps.ExchangeConfig",
     "apps.portfolio.apps.PortfolioConfig",
 ]
 

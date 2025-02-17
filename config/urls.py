@@ -35,7 +35,6 @@ urlpatterns = [
     # API Endpoints
     path("api/user/", include("apps.user.urls")),  # user App URLs
     path("api/bank/", include("apps.bank.urls")),  # bank App URLs
-    path("api/exchange/", include("apps.exchange.urls")),  # bank App URLs
 ]
 
 

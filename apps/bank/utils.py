@@ -1,65 +1,78 @@
+from decimal import Decimal
 from django.db import transaction
 from django.core.exceptions import ValidationError
+
+from rest_framework import exceptions
 from rest_framework import status
 from rest_framework.response import Response
-from .models import Account, Transaction
+from .models import Transaction
 
 
-def deposit_funds(user, bank_account_pk, amount, description=None):
-    bank_account = Account.objects.get(user=user, pk=bank_account_pk)
-    if amount <= 0:
-        raise ValidationError("Deposit amount must be greater than zero.")
+def deposit_funds(user, account, amount, description=None):
+    deposit_amount = Decimal(amount)
+
+    if deposit_amount <= 0:
+        raise exceptions.ValidationError(
+            detail="Deposit amount must be greater than zero.",
+            code=status.HTTP_400_BAD_REQUEST,
+        )
 
     with transaction.atomic():  # Ensure atomicity
-        # Create a deposit transaction
-        deposit = Transaction.objects.create(
+
+        account.account_balance += deposit_amount
+        account.save()
+
+        deposit = Transaction(
             user=user,
-            bank_account=bank_account,
-            # wallet_account = wallet_account
+            bank_account=account,
             transaction_type=Transaction.TRANSACTION_TYPE_DEPOSIT,
-            amount=amount,
+            amount=deposit_amount,
             status=Transaction.STATUS_COMPLETED,
             description=description,
         )
 
-        # Update the bank account balance
-        bank_account.account_balance += amount
-        bank_account.save()
+        deposit.save()
+
         message = {
             "status": "COMPLETED",
-            "message": f"Deposit of {amount} completed for user {user.email}.",
+            "message": f"Deposit of {deposit_amount} completed for user {user.email}.",
         }
 
-    return Response(message, status=status.HTTP_201_CREATED)
+    return message
 
 
-def withdraw_funds(user, bank_account_pk, amount, description=None):
+def withdraw_funds(user, account, amount, description=None):
+    withdraw_amount = Decimal(amount)
+    if withdraw_amount <= 0:
+        raise exceptions.ValidationError(
+            detail="Withdrawal amount must be greater than zero.",
+            code=status.HTTP_400_BAD_REQUEST,
+        )
 
-    bank_account = Account.objects.get(pk=bank_account_pk, user=user)
-    if amount <= 0:
-        raise ValidationError("Withdrawal amount must be greater than zero.")
-
-    if amount > bank_account.account_balance:
-        raise ValidationError("Insufficient funds for withdrawal.")
+    if withdraw_amount > account.account_balance:
+        raise exceptions.ValidationError(
+            detail="Insufficient funds for withdrawal.",
+            code=status.HTTP_400_BAD_REQUEST,
+        )
 
     with transaction.atomic():  # Ensure atomicity
         # Create a withdrawal transaction
-        withdrawal = Transaction.objects.create(
+        # Update the bank account balance
+        account.account_balance -= withdraw_amount
+        account.save()
+        withdrawal = Transaction(
             user=user,
-            bank_account=bank_account,
+            bank_account=account,
             transaction_type=Transaction.TRANSACTION_TYPE_WITHDRAWAL,
-            amount=amount,
+            amount=withdraw_amount,
             status=Transaction.STATUS_COMPLETED,
             description=description,
         )
-
-        # Update the bank account balance
-        bank_account.account_balance -= amount
-        bank_account.save()
+        withdrawal.save()
 
     message = {
         "status": "COMPLETED",
         "message": f"Withdrawal of {amount} completed for user {user.email}.",
     }
 
-    return Response(message, status=status.HTTP_201_CREATED)
+    return message
