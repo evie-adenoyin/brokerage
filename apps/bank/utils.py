@@ -1,10 +1,10 @@
 from decimal import Decimal
 from django.db import transaction
-from django.core.exceptions import ValidationError
-
 from rest_framework import exceptions
 from rest_framework import status
-from rest_framework.response import Response
+
+
+from apps.trade.utils import deposit_to_wallet, withdraw_from_wallet
 from .models import Transaction
 
 
@@ -19,6 +19,7 @@ def deposit_funds(user, account, amount, description=None):
 
     with transaction.atomic():  # Ensure atomicity
 
+        withdraw_from_wallet(user, deposit_amount)
         account.account_balance += deposit_amount
         account.save()
 
@@ -60,6 +61,7 @@ def withdraw_funds(user, account, amount, description=None):
         # Update the bank account balance
         account.account_balance -= withdraw_amount
         account.save()
+        deposit_to_wallet(user, withdraw_amount)
         withdrawal = Transaction(
             user=user,
             bank_account=account,
@@ -70,9 +72,9 @@ def withdraw_funds(user, account, amount, description=None):
         )
         withdrawal.save()
 
-    message = {
-        "status": "COMPLETED",
-        "message": f"Withdrawal of {amount} completed for user {user.email}.",
-    }
+        message = {
+            "status": "COMPLETED",
+            "message": f"Withdrawal of {amount} completed for user {user.email}.",
+        }
 
     return message

@@ -44,9 +44,10 @@ INSTALLED_APPS = [
     "rest_framework_simplejwt",
     "drf_yasg",
     # custom apps
-    "apps.user.apps.UserConfig",
     "apps.bank.apps.BankConfig",
     "apps.portfolio.apps.PortfolioConfig",
+    "apps.trade.apps.TradeConfig",
+    "apps.user.apps.UserConfig",
 ]
 
 MIDDLEWARE = [

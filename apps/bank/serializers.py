@@ -10,7 +10,14 @@ from .models import Account, Transaction
 class BankAccountSerializer(serializers.ModelSerializer):
     class Meta:
         model = Account
-        fields = ["id", "user", "bank_name", "account_type", "account_number"]
+        fields = [
+            "id",
+            "user",
+            "bank_name",
+            "account_balance",
+            "account_type",
+            "account_number",
+        ]
         read_only_fields = ["id", "user"]
 
     def create(self, validated_data: OrderedDict) -> Account:
