@@ -17,7 +17,7 @@ class TradeCreateAPIView(generics.CreateAPIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def create(self, request, *args, **kwargs):
-        # Ensure the user profile exists
+        # Ensure the user profile exists always
         user = request.user
         data = self.request.data
         instrument_symbol = data["instrument_symbol"]
